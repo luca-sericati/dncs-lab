@@ -1,0 +1,18 @@
+FirstName: Luca
+LastName: Sericati
+MatriculationNumber: 202097
+AcademicYear: 2019-2020
+GitHubUrl: https://github.com/luca-sericati/dncs-lab.git
+Subnets:
+  HostsA:
+    RequiredAddresses: 184
+    SubnetAddress: 101.0.0.0
+    SubnetPrefixLength: 24
+  HostsB:
+    RequiredAddresses: 303
+    SubnetAddress: 101.0.2.0
+    SubnetPrefixLength: 23
+  Hub:
+    RequiredAddresses: 104
+    SubnetAddress: 102.0.0.2
+    SubnetPrefixLength: 25
