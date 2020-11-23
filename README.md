@@ -123,29 +123,29 @@ The assignment deliverable consists of a Github repository containing:
 
 First of all, in oreder to accomplish the task it is necessary to set up the netmasks and the ip addresses of the subnets.
 
-In the subnet host-a it is necessary to scale up 184 usable addresses, so I decided to use a netmask of `255.255.255.0` that allows 255 addresses. Considering that one of them is used for the broadcast and another for the gateway (router-1) we obtain 253 usable addresses. I decided to give to this subnet a network address of `101.0.0.0/24`.
+In the subnet host-a it is necessary to scale up 184 usable addresses, so I decided to use a netmask of `255.255.255.0` that allows 255 addresses. Considering that one of them is used for the broadcast and another is the network address we obtain 253 usable addresses (one of them used for the gateway). I decided to give to this subnet a network address of `10.101.0.0/24`.
 
-Similarly, for the host-b subnet I used an address of `101.0.2.0/23` because, in this case with 303 hosts, we need at least 9 bits for the host address. In fatc with 9 bits we obtain 2^9 - 2 = 510 usable addresses.
+Similarly, for the host-b subnet I used an address of `10.101.2.0/23` because, in this case with 303 hosts, we need at least 9 bits for the host address. In fatc with 9 bits we obtain 2^9 - 2 = 510 usable addresses (one of them for the gateway).
 
-Finally, for the host-c we have only 104 hosts so 7 bits of host address are enaugh. To be sure, 2^7 - 2 = 125 usable addresses. The network address chosen is `102.0.0.0/25`.
+Finally, for the host-c we have only 104 hosts so 7 bits of host address are enaugh. To be sure, 2^7 - 2 = 125 usable addresses. The network address chosen is `10.102.0.0/25`.
 
-We also need another subnet which connects the two routers. Only two hosts to address but including the broadcast address we need at least 2 bits (2^2 - 1 = 3). I opted for a `100.0.0.0/30` network address.
+We also need another subnet which connects the two routers. Only two hosts to address but including the broadcast address and the network address, we need at least 2 bits (2^2 - 2 = 2). I opted for a `10.100.0.0/30` network address.
 
-host-a and host-b need to be in two separate netwok but due to the fact that they are connected to the same switch and router-1 has only one NIC connected to the switch I decided to use VLANs. In particular we have VLAN tag 9 used to manage the network `101.0.0.0` and VLAN tag 10 for network `101.0.2.0`.
+host-a and host-b need to be in two separate netwok but due to the fact that they are connected to the same switch and router-1 has only one NIC connected to the switch I decided to use VLANs. In particular we have VLAN tag 9 used to manage the network `10.101.0.0` and VLAN tag 10 for network `10.101.2.0`.
 
 ## host-a
 
 For host-a I added a file to the provision that runs at every start up of the machine with these three lines:
 
 ```bash
-ifconfig enp0s8 101.0.0.2 netmask 255.255.255.0 broadcast 101.0.0.255 up
-ip route add 101.0.2.0/23 via 101.0.0.1 dev enp0s8
-ip route add 102.0.0.0/25 via 101.0.0.1 dev enp0s8
+ifconfig enp0s8 10.101.0.2 netmask 255.255.255.0 broadcast 10.101.0.255 up
+ip route add 10.101.2.0/23 via 10.101.0.1 dev enp0s8
+ip route add 10.102.0.0/25 via 10.101.0.1 dev enp0s8
 ```
 
-The first one configures the interface `enp0s8` with the ip `101.0.0.2/25` and with the broadcast address set to `101.0.0.255`.
+The first one configures the interface `enp0s8` with the ip `10.101.0.2/25` and with the broadcast address set to `10.101.0.255`.
 
-The second one configures the route for reaching host-b. It says: in order to reach the netowrk `101.0.2.0/23` it is necessary to contact the gateway with ip `101.0.0.1` using the interface `enp0s8`.
+The second one configures the route for reaching host-b. It says: in order to reach the netowrk `10.101.2.0/23` it is necessary to contact the gateway with ip `10.101.0.1` using the interface `enp0s8`.
 
 Similarly, the third line allow host-a to connect to host-c.
 
@@ -154,9 +154,9 @@ Similarly, the third line allow host-a to connect to host-c.
 The same configuration as host-a is used for host-b changing the ip addresses and the netmask according with the previous choices.
 
 ```bash
-ifconfig enp0s8 101.0.2.2 netmask 255.255.254.0 broadcast 101.0.3.255 up
-ip route add 101.0.0.0/24 via 101.0.2.1 dev enp0s8
-ip route add 102.0.0.0/25 via 101.0.2.1 dev enp0s8
+ifconfig enp0s8 10.101.2.2 netmask 255.255.254.0 broadcast 10.101.3.255 up
+ip route add 10.101.0.0/24 via 10.101.2.1 dev enp0s8
+ip route add 10.102.0.0/25 via 10.101.2.1 dev enp0s8
 ```
 
 ## host-c
@@ -174,9 +174,9 @@ docker pull dustnic82/nginx-test
 We also have a script that runs at every start up which configures the network and runs the docker image.
 
 ```bash
-ifconfig enp0s8 102.0.0.2 netmask 255.255.255.128 broadcast 102.0.0.127 up
-ip route add 101.0.0.0/24 via 102.0.0.1 dev enp0s8
-ip route add 101.0.2.0/23 via 102.0.0.1 dev enp0s8
+ifconfig enp0s8 10.102.0.2 netmask 255.255.255.128 broadcast 10.102.0.127 up
+ip route add 10.101.0.0/24 via 10.102.0.1 dev enp0s8
+ip route add 10.101.2.0/23 via 10.102.0.1 dev enp0s8
 
 docker run -d -p 80:80 dustnic82/nginx-test
 ```
@@ -234,19 +234,19 @@ At every start up there is a script that configures router-1 for managing both V
 ip link set enp0s8 up
 modprobe 8021q
 vconfig add enp0s8 9
-ip addr add 101.0.0.1/24 dev enp0s8.9
+ip addr add 10.101.0.1/24 dev enp0s8.9
 vconfig add enp0s8 10
-ip addr add 101.0.2.1/23 dev enp0s8.10
+ip addr add 10.101.2.1/23 dev enp0s8.10
 ip link set enp0s8.9 up
 ip link set enp0s8.10 up
 
-ifconfig enp0s9 100.0.0.1 netmask 255.255.255.252 broadcast 100.0.0.3 up
-ip route add 102.0.0.0/25 via 100.0.0.2 dev enp0s9
+ifconfig enp0s9 10.100.0.1 netmask 255.255.255.252 broadcast 10.100.0.3 up
+ip route add 10.102.0.0/25 via 10.100.0.2 dev enp0s9
 ```
 
-After bringing up `enp0s8` and configured router/1 with the standard `802.1q`, tag 9 and 10 are added. router-1 has is `101.0.0.1/24` for the VLAN tag 9 and `101.2.0.2/23` for VLAN tag 10. Also `enp0s8.9` and `enp0s8.10` need to be bringed up.
+After bringing up `enp0s8` and configured router/1 with the standard `802.1q`, tag 9 and 10 are added. router-1 has is `10.101.0.1/24` for the VLAN tag 9 and `101.2.0.2/23` for VLAN tag 10. Also `enp0s8.9` and `enp0s8.10` need to be bringed up.
 
-The last two lines are used to configure `enp0s9` and the route to contact Host-c via `100.0.0.2` (router-2).
+The last two lines are used to configure `enp0s9` and the route to contact Host-c via `10.100.0.2` (router-2).
 
 
 ## router-2
@@ -254,20 +254,20 @@ The last two lines are used to configure `enp0s9` and the route to contact Host-
 For the router-2 we have this line of code:
 
 ```bash
-ifconfig enp0s8 102.0.0.1 netmask 255.255.255.128 broadcast 102.0.0.127 up
-ifconfig enp0s9 100.0.0.2 netmask 255.255.255.252 broadcast 100.0.0.3 up
-ip route add 101.0.0.0/24 via 100.0.0.1 dev enp0s9
-ip route add 101.0.2.0/23 via 100.0.0.1 dev enp0s9
+ifconfig enp0s8 10.102.0.1 netmask 255.255.255.128 broadcast 10.102.0.127 up
+ifconfig enp0s9 10.100.0.2 netmask 255.255.255.252 broadcast 10.100.0.3 up
+ip route add 10.101.0.0/24 via 10.100.0.1 dev enp0s9
+ip route add 10.101.2.0/23 via 10.100.0.1 dev enp0s9
 ```
 
-They are used to bringing up the two network card interfaces and to configure the route for the subnets Host-a and Host-b. In detail with the third (and the fourth) line we say that to arrive at `101.0.0.0/24` (or `101.0.2.0/23`) we need to contact `100.0.0.1` (router-1) using `enp0s9`.
+They are used to bringing up the two network card interfaces and to configure the route for the subnets Host-a and Host-b. In detail with the third (and the fourth) line we say that to arrive at `10.101.0.0/24` (or `10.101.2.0/23`) we need to contact `10.100.0.1` (router-1) using `enp0s9`.
 
 ## Test
 
 In order to test the work done, after running `vagrant up` and connect to host-a (or host-b) using `vagrant ssh host-a` or (`vagrant ssh host-b`) I try to connect to host-c using:
 
 ```bash
-curl 102.0.0.2
+curl 10.102.0.2
 ```
 
 And the output was:
@@ -355,20 +355,20 @@ function changeCookie() {
 <img alt="NGINX Logo" src="http://d37h62yn5lrxxl.cloudfront.net/assets/nginx.png"/>
 <div class="info">
 <p><span>Server&nbsp;address:</span> <span>172.17.0.2:80</span></p>
-<p><span>Server&nbsp;name:</span> <span>7ce959e93d1f</span></p>
-<p class="smaller"><span>Date:</span> <span>20/Nov/2020:11:33:55 +0000</span></p>
+<p><span>Server&nbsp;name:</span> <span>53aeb5a808ae</span></p>
+<p class="smaller"><span>Date:</span> <span>23/Nov/2020:13:20:21 +0000</span></p>
 <p class="smaller"><span>URI:</span> <span>/</span></p>
 </div>
 <br>
 <div class="info">
-    <p class="smaller"><span>Host:</span> <span>102.0.0.2</span></p>
+    <p class="smaller"><span>Host:</span> <span>10.102.0.2</span></p>
     <p class="smaller"><span>X-Forwarded-For:</span> <span></span></p>
 </div>
 
 <div class="check"><input type="checkbox" id="check" onchange="changeCookie()"> Auto Refresh</div>
     <div id="footer">
         <div id="center" align="center">
-            Request ID: 9d3604146aaafa35629ac51047b1f89f<br/>
+            Request ID: 97dcbc12c92625f48f222ef77dc2a95e<br/>
             &copy; NGINX, Inc. 2018
         </div>
     </div>
