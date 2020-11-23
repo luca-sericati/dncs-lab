@@ -278,7 +278,7 @@ curl 10.102.0.2
 
 And the output was:
 
-
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -380,6 +380,7 @@ function changeCookie() {
     </div>
 </body>
 </html>
+```
 
 This means that host-c is reachable from both host-a and host-b and has a running docker image which contains an http server.
 
