@@ -138,14 +138,15 @@ host-a and host-b need to be in two separate netwok but due to the fact that the
 For host-a I added a file to the provision that runs at every start up of the machine with these three lines:
 
 ```bash
-ifconfig enp0s8 10.101.0.2 netmask 255.255.255.0 broadcast 10.101.0.255 up
+ip addr add 10.101.0.2/24 dev enp0s8
+ip link set enp0s8 up
 ip route add 10.101.2.0/23 via 10.101.0.1 dev enp0s8
 ip route add 10.102.0.0/25 via 10.101.0.1 dev enp0s8
 ```
 
-The first one configures the interface `enp0s8` with the ip `10.101.0.2/25` and with the broadcast address set to `10.101.0.255`.
+The first one configures the interface `enp0s8` with the ip `10.101.0.2/25` and the second brings up `enp0s8`.
 
-The second one configures the route for reaching host-b. It says: in order to reach the netowrk `10.101.2.0/23` it is necessary to contact the gateway with ip `10.101.0.1` using the interface `enp0s8`.
+The third one configures the route for reaching host-b. It says: in order to reach the netowrk `10.101.2.0/23` it is necessary to contact the gateway with ip `10.101.0.1` using the interface `enp0s8`.
 
 Similarly, the third line allow host-a to connect to host-c.
 
@@ -154,7 +155,8 @@ Similarly, the third line allow host-a to connect to host-c.
 The same configuration as host-a is used for host-b changing the ip addresses and the netmask according with the previous choices.
 
 ```bash
-ifconfig enp0s8 10.101.2.2 netmask 255.255.254.0 broadcast 10.101.3.255 up
+ip addr add 10.101.2.2/23 dev enp0s8
+ip link set enp0s8 up
 ip route add 10.101.0.0/24 via 10.101.2.1 dev enp0s8
 ip route add 10.102.0.0/25 via 10.101.2.1 dev enp0s8
 ```
@@ -174,14 +176,15 @@ docker pull dustnic82/nginx-test
 We also have a script that runs at every start up which configures the network and runs the docker image.
 
 ```bash
-ifconfig enp0s8 10.102.0.2 netmask 255.255.255.128 broadcast 10.102.0.127 up
+ip addr add 10.102.0.2/25 dev enp0s8
+ip link set enp0s8 up
 ip route add 10.101.0.0/24 via 10.102.0.1 dev enp0s8
 ip route add 10.101.2.0/23 via 10.102.0.1 dev enp0s8
 
 docker run -d -p 80:80 dustnic82/nginx-test
 ```
 
-In this, the first three lines acts as for host-a and host-b. The last one runs the docker image as daemon connecting port 80 to the port 80 of host-c.
+In this, the first four lines acts as for host-a and host-b. The last one runs the docker image as daemon connecting port 80 to the port 80 of host-c.
 
 In order to run docker on host-c it was necessary to increase the vb-memory to 512 in the Vagrantfile.
 
@@ -240,13 +243,14 @@ ip addr add 10.101.2.1/23 dev enp0s8.10
 ip link set enp0s8.9 up
 ip link set enp0s8.10 up
 
-ifconfig enp0s9 10.100.0.1 netmask 255.255.255.252 broadcast 10.100.0.3 up
+ip addr add 10.100.0.1/30 dev enp0s9
+ip link set enp0s9 up
 ip route add 10.102.0.0/25 via 10.100.0.2 dev enp0s9
 ```
 
-After bringing up `enp0s8` and configured router/1 with the standard `802.1q`, tag 9 and 10 are added. router-1 has is `10.101.0.1/24` for the VLAN tag 9 and `101.2.0.2/23` for VLAN tag 10. Also `enp0s8.9` and `enp0s8.10` need to be bringed up.
+After bringing up `enp0s8` and configured router/1 with the standard `802.1q`, tag 9 and 10 are added. router-1 has is `10.101.0.1/24` for the VLAN tag 9 and `10.101.2.1/23` for VLAN tag 10. Also `enp0s8.9` and `enp0s8.10` need to be bringed up.
 
-The last two lines are used to configure `enp0s9` and the route to contact Host-c via `10.100.0.2` (router-2).
+The last three lines are used to configure `enp0s9` and the route to contact Host-c via `10.100.0.2` (router-2).
 
 
 ## router-2
@@ -254,13 +258,15 @@ The last two lines are used to configure `enp0s9` and the route to contact Host-
 For the router-2 we have this line of code:
 
 ```bash
-ifconfig enp0s8 10.102.0.1 netmask 255.255.255.128 broadcast 10.102.0.127 up
-ifconfig enp0s9 10.100.0.2 netmask 255.255.255.252 broadcast 10.100.0.3 up
+ip addr add 10.102.0.1/25 dev enp0s8
+ip link set enp0s8 up
+ip addr add 10.100.0.2/30 dev enp0s9
+ip link set enp0s9 up
 ip route add 10.101.0.0/24 via 10.100.0.1 dev enp0s9
 ip route add 10.101.2.0/23 via 10.100.0.1 dev enp0s9
 ```
 
-They are used to bringing up the two network card interfaces and to configure the route for the subnets Host-a and Host-b. In detail with the third (and the fourth) line we say that to arrive at `10.101.0.0/24` (or `10.101.2.0/23`) we need to contact `10.100.0.1` (router-1) using `enp0s9`.
+They are used to bringing up the two network card interfaces and to configure the route for the subnets Host-a and Host-b. In detail with the fifth (and the sixth) line we say that to arrive at `10.101.0.0/24` (or `10.101.2.0/23`) we need to contact `10.100.0.1` (router-1) using `enp0s9`.
 
 ## Test
 
@@ -272,7 +278,7 @@ curl 10.102.0.2
 
 And the output was:
 
-```html
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -374,7 +380,6 @@ function changeCookie() {
     </div>
 </body>
 </html>
-```
 
 This means that host-c is reachable from both host-a and host-b and has a running docker image which contains an http server.
 
