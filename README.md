@@ -133,6 +133,17 @@ We also need another subnet which connects the two routers. Only two hosts to ad
 
 host-a and host-b need to be in two separate netwok but due to the fact that they are connected to the same switch and router-1 has only one NIC connected to the switch I decided to use VLANs. In particular we have VLAN tag 9 used to manage the network `10.101.0.0` and VLAN tag 10 for network `10.101.2.0`.
 
+## Vagrantfile
+In order to be able to run scripts after the installation of the machines I used this line of code:
+
+```bash
+machineName.vm.provision "shell", path: "path/of/the/script.sh"
+```
+
+I also used the same line with the addition of the flag `run: 'always'`. This permits to run scripts at every start up of the machine.
+
+I also scaled up the `vb.memory` of the host-c from 256 MB to 512 MB. This was necessary in order to prevent the machine to crash executing Docker.
+
 ## host-a
 
 For host-a I added a file to the provision that runs at every start up of the machine with these three lines:
